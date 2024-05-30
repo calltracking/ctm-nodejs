@@ -36,7 +36,7 @@ npm i
 # Running
 
 ```
-node index.js
+node index.mjs
 ```
 
 # CTM Access API
