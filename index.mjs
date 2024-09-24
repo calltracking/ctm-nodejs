@@ -51,13 +51,13 @@ class App {
   async ctmAccessRequest(request, reply) {
     const requestUrl = `https://${this.ctm_host}/api/v1/accounts/${this.ctm_account_id}/phone_access`;
 
-    const email = 'demo@calltrackingmetrics.com';
+    const email = 'edwin.portillo@calltrackingmetrics.com';
     const sessionId = request.cookies.user_session || 'dummy_session_id'; // Get session_id from cookie or use a dummy value
 
     const requestData = {
       email: email,
-      first_name: 'John',
-      last_name: 'Doe',
+      // first_name: 'John',
+      // last_name: 'Doe',
       session_id: sessionId,
     };
 
@@ -121,16 +121,16 @@ class App {
       prefix: '/public/', // optional: default '/'
     });
 
-    // For demo purposes, we are using a hardcoded username and password, you would want to take care to 
+    // For demo purposes, we are using a hardcoded username and password, you would want to take care to
     // secure your application with a proper authentication mechanism and user management.
     // For production, you application accessible on the internet a multi-factor authentication is strongly encouraged.
     this.fastify.register(fastifyBasicAuth, {
       validate: (username, password, req, reply, done) => {
-        if (username === 'demo@calltrackingmetrics.com' && password === 'ctm-demo-123') {
+        // if (username === 'demo@calltrackingmetrics.com' && password === 'ctm-demo-123') {
           done();
-        } else {
-          done(new Error('Invalid credentials'));
-        }
+        // } else {
+        //   done(new Error('Invalid credentials'));
+        // }
       },
       authenticate: true,
       cookie: {
