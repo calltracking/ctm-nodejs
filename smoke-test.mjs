@@ -5,19 +5,17 @@ const args = process.argv.slice(2);
 const hasInspectBrkFlag = process.execArgv.some(arg => arg.includes('--inspect-brk'));
 if (!hasInspectBrkFlag) {
   console.log("if you wanna debug this code and want 'debugger' to work, do:")
-  console.log("node --inspect-brk smoke-test.mjs <email> <password>");
+  console.log("node --inspect-brk smoke-test.mjs <phone_number_you_wanna_call>");
 }
 
-if (args.length !== 3) {
-  console.error("Usage: smoke-test.mjs <email> <password> <phone_number>");
+if (args.length !== 1) {
+  console.error("Usage: smoke-test.mjs <phone_number_you_wanna_call>");
   process.exit(1);
 }
 
-
-const email = args[0];
-const password = args[1];
-//lets make sure to take dashes, parenthesis, and spaces out of the phonenumber
-const phoneNumber = args[2].replace(/[-()\s]/g, '');
+const email = "demo@calltrackingmetrics.com"
+const password = "ctm-demo-123"
+const phoneNumber = args[0].replace(/[-()\s]/g, '');
 
 if (!phoneNumber.match(/^\d{10}$/)) {
   console.error("Phone number should be 10 digits");
@@ -60,7 +58,7 @@ await Promise.all([
   page.click("button[type='submit']")
 ]);
 
-await page.waitForSelector('iframe[src*="https://app.ctmdev.us/phoneapp/embed"]', { timeout: 10000 });
+await page.waitForSelector('iframe[src*="https://app.ctmdev.us/phoneapp/embed"]', { timeout: 15000 });
 const frameElement = await page.$('iframe[src*="https://app.ctmdev.us/phoneapp/embed"]');
 const frame = await frameElement.contentFrame();
 
@@ -69,7 +67,7 @@ if (!frame) {
   process.exit(1);
 }
 
-await frame.waitForSelector(".toggle-open-phone", { visible: true });
+await frame.waitForSelector(".toggle-open-phone", { visible: true, timeout: 15000});
 
 let newPage;
 browser.on('targetcreated', async (target) => {
