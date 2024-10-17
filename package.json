@@ -10,6 +10,7 @@
     "@fastify/view": "^9.1.0",
     "ejs": "^3.1.10",
     "fastify": "^4.27.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "puppeteer": "^23.4.0"
   }
 }
