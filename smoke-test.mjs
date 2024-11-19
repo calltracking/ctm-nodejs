@@ -1,26 +1,28 @@
 import puppeteer from "puppeteer";
-
-const args = process.argv.slice(2);
+import process from 'process';
 
 const hasInspectBrkFlag = process.execArgv.some(arg => arg.includes('--inspect-brk'));
 if (!hasInspectBrkFlag) {
   console.log("if you wanna debug this code and want 'debugger' to work, do:")
-  console.log("node --inspect-brk smoke-test.mjs <phone_number_you_wanna_call>");
+  console.log("node --inspect-brk smoke-test.mjs");
+  console.log("then open chrome://inspect/#devices in your browser and click 'inspect'");
 }
 
-if (args.length !== 1) {
-  console.error("Usage: smoke-test.mjs <phone_number_you_wanna_call>");
+// Global vars
+
+const token = process.env.PHONE_TEST_DEV_TOKEN;
+const email = process.env.PHONE_TEST_DEV_EMAIL;
+
+const args = process.argv.slice(2);
+const devNumber = args[0];
+const prodNumber = args[1];
+
+if (!devNumber || !prodNumber) {
+  console.error("Usage: smoke-test.mjs <number-to-receive-calls> <number-to-send-calls-from>");
   process.exit(1);
 }
 
-const email = "demo@calltrackingmetrics.com"
-const password = "ctm-demo-123"
-const phoneNumber = args[0].replace(/[-()\s]/g, '');
-
-if (!phoneNumber.match(/^\d{10}$/)) {
-  console.error("Phone number should be 10 digits");
-  process.exit(1);
-}
+// Launch phone
 
 const browser = await puppeteer.launch(
   {
@@ -33,32 +35,18 @@ const browser = await puppeteer.launch(
       '--disable-features=UserMediaSelectedAudioOutputDevices'
     ],
     defaultViewport: {
-      width: 1400,
-      height: 900,
+      width: 1200,
+      height: 700,
     },
   }
 );
 
-//login, we need those credentials you passed in
 const page = await browser.newPage();
-await page.goto("http://127.0.0.1:8001");
+await page.goto(`http://app.ctmdev.us/phone_test?token=${token}&email=${email}`);
 
-await page.waitForSelector("#username");
-await page.waitForSelector("#password");
-await page.waitForSelector("button[type='submit']");
+// //wait for the device to be registered, this can take a while, also make sure you accept the camera/mic permissions on chrome tab
+// await deviceFrame.waitForSelector(".register-details", { visible: true, timeout: 45000 });
 
-await page.click("#username");
-await page.type("#username", email);
-
-await page.click("#password");
-await page.type("#password", password);
-
-await Promise.all([
-  page.waitForNavigation({ waitUntil: 'networkidle0' }), // Wait for network to be idle
-  page.click("button[type='submit']")
-]);
-
-await page.waitForSelector('iframe[src*="https://app.ctmdev.us/phoneapp/embed"]', { timeout: 15000 });
 const frameElement = await page.$('iframe[src*="https://app.ctmdev.us/phoneapp/embed"]');
 const frame = await frameElement.contentFrame();
 
@@ -67,64 +55,88 @@ if (!frame) {
   process.exit(1);
 }
 
-await frame.waitForSelector(".toggle-open-phone", { visible: true, timeout: 15000});
+await frame.waitForSelector('ctm-phone-input', { visible: true, timeout: 10000 });
 
-let newPage;
-browser.on('targetcreated', async (target) => {
-  const targetPage = await target.page(); if (targetPage && targetPage.url().includes("http://127.0.0.1:8001/device")) {
-    newPage = targetPage;
-  }
+await frame.evaluate(() => {
+  document.querySelector('ctm-phone-control').agent.setStatus('online');
 });
 
-await frame.click(".toggle-open-phone");
-while (!newPage) {
-  await new Promise(resolve => setTimeout(resolve, 100));
+// Helper functions
+
+const makeCallFromProd = async () => {
+  console.log('about to make call...');
+  try {
+    const url = `https://app.calltrackingmetrics.com/api/v1/accounts/${process.env.PHONE_TEST_PROD_ACCOUNT_ID}/calls/`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        // 'Authorization': 'Basic {{Basic Auth}}',
+        'Content-Type': 'application/json',
+        'Cookie': `ctm_auth_cap=${process.env.PHONE_TEST_PROD_TOKEN}`,
+      },
+      body: JSON.stringify({
+        from_number: `+1${prodNumber}`,
+        call_number: `+1${devNumber}`,
+      }),
+    });
+
+    if (!response.ok) {
+      console.log(`Request failed with status ${response.status}`);
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const res = await response.json();
+    console.log(res);
+  } catch (error) {
+    console.log(error);
+  };
 }
 
-await newPage.waitForSelector('iframe[src*="https://app.ctmdev.us/phoneapp/embed_device"]', { timeout: 10000 });
-await newPage.bringToFront();
+// Test functions
 
-const deviceFrameElement = await newPage.$('iframe[src*="https://app.ctmdev.us/phoneapp/embed_device"]');
-const deviceFrame = await deviceFrameElement.contentFrame();
+const testOutboundCall = async () => {
+  await frame.evaluate((prodNumber) => {
+    const phoneInput = document.querySelector('ctm-phone-input');
+    phoneInput.value = prodNumber;
+  }, prodNumber);
 
-const button = await deviceFrame.waitForSelector(".button.register", { visible: true, timeout: 10000 });
-await button.click();
+  const callButton = await frame.waitForSelector('.call-button', { visible: true, timeout: 2000 });
+  await callButton.click();
 
-//wait for the device to be registered, this can take a while, also make sure you accept the camera/mic permissions on chrome tab
-await deviceFrame.waitForSelector(".register-details", { visible: true, timeout: 45000 });
+  // await frame.locator('a.hangup-call-button', { hidden: true, timeout: 1000 }).click(); // If the call actually connects, we need to hang up
 
-//go back to the main page, phone should now be open
-await page.bringToFront();
-await frame.waitForSelector("ctm-phone-input", { visible: true, timeout: 10000 });
+  await frame.locator('.finish-wrapup').click();
+}
 
-//here it gets a little tricky, thanks shadow dom
-const shadowHost = await frame.waitForSelector('ctm-phone-input');
+const testInboundCall = async () => {
+  await makeCallFromProd();
 
-//first lets try to click the phone input and type in the number
-const inputElement = await frame.evaluateHandle(shadowHost => {
-  const shadowRoot = shadowHost.shadowRoot;
+  // Answer the call!
+  await frame.locator('.accept-call-button').click();
 
-  return shadowRoot.querySelector('.form-control.phone-number');
-}, shadowHost);
-const inputElementHandle = await inputElement.asElement();
-await inputElementHandle.click();
-await inputElementHandle.type(phoneNumber);
+  // Wait until we are showing "inbound" status which means the call has connected
+  await frame.locator('.agent-status-inbound').click();
 
-//now lets try to get the call button, and click it
-const callButton = await frame.waitForSelector('.call-button', { visible: true, timeout: 10000 });
-await callButton.click();
+  const status = await frame.locator('main').map((main) => main.dataset.status).wait();
+  console.log('status', status);
 
-const hangupButton = await frame.waitForSelector('a.hangup-call-button', { visible: true, timeout: 10000 });
+  const callDetails = await frame.locator('ctm-phone-control').map((control) => control.callDetails).wait();
+  console.log('callDetails', callDetails);
 
-//45 seconds to do your thing
-await frame.waitForSelector('a.hangup-call-button', { hidden: true, timeout: 45000 })
-.then(async () => {
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  console.log('waiting 8 secs before hanging up...');
+  await setTimeout(() => {
+    frame.click("a.hangup-call-button");
+  }, 8000);
+
+  await frame.locator('.finish-wrapup').click();
+}
+
+const runTests = async () => {
+  await testOutboundCall();
+  await testInboundCall();
+
   process.exit(0);
-})
-.catch(async () => {
-  //it has timed out, so lets just hangup and kill the test
-  frame.click("a.hangup-call-button");
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  process.exit(0);
-});
+}
+
+runTests();
