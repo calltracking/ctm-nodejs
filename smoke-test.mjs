@@ -89,7 +89,7 @@ const phoneSettings = await frame.evaluate(() => {
 ///// Helper functions ////
 
 const makeCallFromProd = async () => {
-  console.log('about to make call from prod...');
+  console.log(`about to make call from prod number ${prodNumber} to dev number ${devNumber}`);
   try {
     const url = `https://app.calltrackingmetrics.com/api/v1/accounts/${process.env.PHONE_TEST_PROD_ACCOUNT_ID}/calls/`;
 
