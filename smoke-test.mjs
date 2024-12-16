@@ -156,7 +156,7 @@ const makeInboundCall = async () => {
 
 const logSuccess = (msg = null) => {
   if (!msg) {
-    // Capture the stack traceQ
+    // Capture the stack trace
     const stack = {};
     Error.captureStackTrace(stack);
 
