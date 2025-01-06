@@ -199,6 +199,9 @@ const testOutboundCall = async () => {
   // await frame.evaluate(() => {
   //   document.querySelector('ctm-phone-control').agent.setStatus('online');
   // });
+
+  await sleep(1000);
+
   await frame.waitForSelector('.finish-wrapup', { visible: true, timeout: 2000 });
   await frame.locator('.finish-wrapup').click();
 
@@ -267,7 +270,7 @@ const testKeypadNumKeys = async () => {
       process.exit(1);
     }
   }
-  
+
   logSuccess();
 }
 
@@ -276,7 +279,7 @@ const testChangeStatusPickerToFromNumerOnFullInput = async () => {
   await frame.evaluate(() => {
     const inputElement = document.querySelector('.phonenumber-input');
     if (inputElement) {
-      inputElement.value = ''; 
+      inputElement.value = '';
     }
   });
   // Cleaing the input causes us to close the keypad, so reopen it
@@ -299,7 +302,7 @@ const showCallButtonOnFullInput = async () => {
   await frame.evaluate(() => {
     const inputElement = document.querySelector('.phonenumber-input');
     if (inputElement) {
-      inputElement.value = ''; 
+      inputElement.value = '';
     }
   });
   // Cleaing the input causes us to close the keypad, so reopen it
