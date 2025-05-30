@@ -1,1 +1,7 @@
 node_modules
+
+# don't commit env files
+.env*
+
+# don't commit certs
+*.pem

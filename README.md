@@ -8,10 +8,10 @@ Example Node.js Application to connect to CallTrackingMetrics embeddable softpho
 To run the example web application you will need to ensure the following environment variables are set
 
 ```
-CTM_TOKEN: Your API key
-CTM_SECRET: Your API secret key
-CTM_ACCOUNT_ID: Your CTM Account ID
-CTM_HOST: app.calltrackingmetrics.com
+export CTM_TOKEN='ctm-api-key'
+export CTM_SECRET='ctm-api-secret'
+export CTM_ACCOUNT_ID='ctm-account-id'
+export CTM_HOST='app.calltrackingmetrics.com'
 ```
 
 In bash you can do this with:
@@ -27,19 +27,31 @@ and windows powershell:
 $env:CTM_SECRET="your_actual_auth_token_here"
 ```
 
-# Building
-
+# certs
+``` bash
+brew install mkcert
+mkcert -install
+mkcert localhost
 ```
-npm i
+
+# Building
+```
+npm install
 ```
 
 # Running
-
 ```
-node index.mjs
+npm run dev
 ```
 
 # CTM Access API
 To enable single sign-on with CTM the application sends a request to the CTM Access API to get a token.
 This token is then used to authenticate the user with the CTM API.
 The token is valid for 5 minutes and can be used to authenticate the user with the CTM API.
+
+# Also see this about embedding
+https://app.calltrackingmetrics.com/phoneapp/embed_example
+
+# Notes/ToDo
+* that endpoint creates the demo user in the ctm account; warn the user? tell them to change the user?
+* direnv can be your friend: https://direnv.net/
