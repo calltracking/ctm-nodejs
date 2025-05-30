@@ -12,5 +12,14 @@
     "fastify": "^4.27.0",
     "node-fetch": "^3.3.2",
     "puppeteer": "^23.4.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "scripts": {
+    "dev": "nodemon index.mjs"
+  },
+  "nodemonConfig": {
+    "ext": "mjs,ejs,js,json"
   }
 }
