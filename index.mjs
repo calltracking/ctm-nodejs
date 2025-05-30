@@ -1,5 +1,6 @@
 import process from 'process';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import ejs from 'ejs';
 import fetch from 'node-fetch';
@@ -22,7 +23,14 @@ class App {
     this.ctm_secret     = process.env.CTM_SECRET;
     this.ctm_account_id = process.env.CTM_ACCOUNT_ID;
 
-    this.fastify        = Fastify({ logger: true });
+    this.fastify = Fastify({
+      logger: true,
+      https: {
+        key: fs.readFileSync('./localhost-key.pem'),
+        cert: fs.readFileSync('./localhost.pem')
+      }
+    });
+
   }
 
   loginPage(request, reply) {
@@ -45,6 +53,11 @@ class App {
   // hosts the CTM device that carriers the voice call and connects to the CTM phone control interface.
   devicePage(request, reply) {
     reply.view('device.ejs', { ctm_host: this.ctm_host });
+  }
+
+  agentStatusPage(request, reply) {
+    const email = 'demo@calltrackingmetrics.com'; // or get from session
+    reply.view('agent_status.ejs', { ctm_host: this.ctm_host, email: email });
   }
 
   // get an access token from CTM to allow your users to authenticate with CTM.
@@ -98,8 +111,30 @@ class App {
     this.fastify.get('/device', this.devicePage.bind(this));
     this.fastify.get('/login', this.loginPage.bind(this));
     this.fastify.post('/login', { preValidation: this.fastify.basicAuth }, this.loginUser.bind(this));
+    this.fastify.get('/agent-status', this.agentStatusPage.bind(this));
+
     // API endpoint
     this.fastify.post('/api/ctm_access', this.ctmAccessRequest.bind(this));
+
+    this.fastify.all('/api/v1/*', async (request, reply) => {
+      const token = request.headers.authorization?.replace('Bearer ', '') || '';
+      const path = request.raw.url.replace(/^\/api\/v1/, '');
+
+      console.log(`>>> Proxying ${path} with token: ${token}`);
+
+      const response = await fetch(`https://bgraw3.ngrok.io/api/v1${path}`, {
+        method: request.method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        // credentials: 'include',
+      });
+
+      const data = await response.text();
+      reply.header('Content-Type', 'application/json').send(data);
+    });
   }
 
   initFastify() {
@@ -118,10 +153,9 @@ class App {
     // Serve static files
     this.fastify.register(fastifyStatic, {
       root: path.join(__dirname, 'public'),
-      prefix: '/public/', // optional: default '/'
     });
 
-    // For demo purposes, we are using a hardcoded username and password, you would want to take care to 
+    // For demo purposes, we are using a hardcoded username and password, you would want to take care to
     // secure your application with a proper authentication mechanism and user management.
     // For production, you application accessible on the internet a multi-factor authentication is strongly encouraged.
     this.fastify.register(fastifyBasicAuth, {
@@ -138,9 +172,29 @@ class App {
       },
     });
 
+    function shouldBypassAuth(url) {
+      const bypassPatterns = [
+        /^\/login$/,                 // Login page
+        /^\/public\//,               // Static files
+        /^\/api\//,                  // API endpoints
+        // /^\/phoneapp\/assets\.json$/, // Special JSON asset
+        /\.js$/,                     // JS files
+        /\.css$/,                    // CSS files
+        /\.json$/,                   // Other JSON files
+        /\.map$/,                    // Source maps
+      ];
+
+      return bypassPatterns.some((pattern) => pattern.test(url));
+    }
+
     // Middleware to check if user is authenticated
     this.fastify.addHook('preHandler', (request, reply, done) => {
-      if (request.cookies.user_session !== 'logged_in' && request.routeOptions.url !== '/login') {
+      const url = request.raw.url;
+      const isLoggedIn = request.cookies.user_session === 'logged_in';
+
+      console.log(`>>> url: ${url}`);
+
+      if (!isLoggedIn && !shouldBypassAuth(url)) {
         reply.redirect('/login');
       } else {
         done();
@@ -153,10 +207,13 @@ class App {
     this.initFastify();
     this.bindRoutes();
     try {
-      await this.fastify.listen({ port: 8001 })
+      await this.fastify.listen({
+        port: 8001,
+        host: 'localhost',
+      });
     } catch (err) {
-      this.fastify.log.error(err)
-      process.exit(1)
+      this.fastify.log.error(err);
+      process.exit(1);
     }
   }
 }

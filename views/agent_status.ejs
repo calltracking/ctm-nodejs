@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://<%= ctm_host %>/ctm-phone-status-1.0.js"></script>
+
+    <style>
+    ctm-agent-status {
+      height: 100px;
+      width: 200px;
+      display: block;
+      margin: 30px;
+      transition: height 0.5s ;
+      padding-top: 0;
+    }
+    </style>
+  </head>
+  <body>
+    <ctm-agent-status email="<%= email %>" access="/api/ctm_access" api-base="https://bgraw3.ngrok.io/api/v1"></ctm-agent-status>
+
+    <script id="example">
+      document.addEventListener("DOMContentLoaded", function() {
+        const ctmStatus  = document.querySelector('ctm-agent-status');
+        const userStatus = document.getElementById("status");
+        const userInfo   = document.getElementById("user");
+
+        ctmStatus.addEventListener("ctm:agentStatusUpdated", function(event) {
+          userStatus.innerHTML = `Status: ${event.detail.status}`;
+          userStatus.classList.remove("ready", "not-ready");
+          if (event.detail.status == 'online') {
+            userStatus.classList.add("ready");
+          } else {
+            userStatus.classList.add("not-ready");
+          }
+          if (event.detail?.agent?.email) {
+            userInfo.innerHTML = `User: ${event.detail.agnt.email}`;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
