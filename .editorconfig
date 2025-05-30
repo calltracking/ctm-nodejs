@@ -1,0 +1,26 @@
+# http://editorconfig.org
+#
+# If using a plugin (vim, emacs) you'll need this first
+# - https://github.com/editorconfig/editorconfig-core-c
+# - brew install editorconfig
+#
+#   Vim Plugin: https://github.com/editorconfig/editorconfig-vim
+# Emacs Plugin: https://github.com/editorconfig/editorconfig-emacs
+#
+# copied/modified from various other projects
+# https://github.com/yeoman/yo/blob/master/.editorconfig
+# https://github.com/facebook/react/blob/master/.editorconfig
+# https://github.com/h5bp/html5-boilerplate/blob/master/.editorconfig
+#
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.md]
+trim_trailing_whitespace = false
