@@ -6,14 +6,14 @@
     <script src="https://<%= ctm_host %>/ctm-phone-status-1.0.js"></script>
 
     <style>
-    ctm-agent-status {
-      height: 100px;
-      width: 200px;
-      display: block;
-      margin: 30px;
-      transition: height 0.5s ;
-      padding-top: 0;
-    }
+      ctm-agent-status {
+        height: 100px;
+        width: 200px;
+        display: block;
+        margin: 30px;
+        transition: height 0.5s ;
+        padding-top: 0;
+      }
     </style>
   </head>
   <body>
@@ -34,7 +34,7 @@
             userStatus.classList.add("not-ready");
           }
           if (event.detail?.agent?.email) {
-            userInfo.innerHTML = `User: ${event.detail.agnt.email}`;
+            userInfo.innerHTML = `User: ${event.detail.agent.email}`;
           }
         });
       });
