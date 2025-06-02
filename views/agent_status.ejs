@@ -17,7 +17,10 @@
     </style>
   </head>
   <body>
-    <ctm-agent-status email="<%= email %>" access="/api/ctm_access" api-base="https://bgraw3.ngrok.io/api/v1"></ctm-agent-status>
+    <ctm-agent-status email="<%= email %>" access="/api/ctm_access"</ctm-agent-status>
+
+    <div id="status">Status: (loading...)</div>
+    <div id="user">User: (loading...)</div>
 
     <script id="example">
       document.addEventListener("DOMContentLoaded", function() {

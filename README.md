@@ -52,6 +52,5 @@ The token is valid for 5 minutes and can be used to authenticate the user with t
 # Also see this about embedding
 https://app.calltrackingmetrics.com/phoneapp/embed_example
 
-# Notes/ToDo
-* that endpoint creates the demo user in the ctm account; warn the user? tell them to change the user?
-* direnv can be your friend: https://direnv.net/
+# Notes
+* direnv can be your friend: https://direnv

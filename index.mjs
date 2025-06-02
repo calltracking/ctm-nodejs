@@ -45,7 +45,7 @@ class App {
     }).redirect('/');
   }
 
-  // hosts your application content and embeds the CTM phone control interface.
+
   indexPage(request, reply) {
     reply.view('index.ejs', { ctm_host: this.ctm_host });
   }
@@ -53,6 +53,11 @@ class App {
   // hosts the CTM device that carriers the voice call and connects to the CTM phone control interface.
   devicePage(request, reply) {
     reply.view('device.ejs', { ctm_host: this.ctm_host });
+  }
+
+  // hosts your application content and embeds the CTM phone control interface.
+  phonePage(request, reply) {
+    reply.view('phone.ejs', { ctm_host: this.ctm_host });
   }
 
   agentStatusPage(request, reply) {
@@ -108,10 +113,13 @@ class App {
 
   bindRoutes() {
     this.fastify.get('/', this.indexPage.bind(this));
-    this.fastify.get('/device', this.devicePage.bind(this));
-    this.fastify.get('/login', this.loginPage.bind(this));
-    this.fastify.post('/login', { preValidation: this.fastify.basicAuth }, this.loginUser.bind(this));
     this.fastify.get('/agent-status', this.agentStatusPage.bind(this));
+    this.fastify.get('/device', this.devicePage.bind(this));
+    this.fastify.get('/phone', this.phonePage.bind(this));
+    this.fastify.get('/login', this.loginPage.bind(this));
+
+    this.fastify.post('/login', { preValidation: this.fastify.basicAuth }, this.loginUser.bind(this));
+
 
     // API endpoint
     this.fastify.post('/api/ctm_access', this.ctmAccessRequest.bind(this));
