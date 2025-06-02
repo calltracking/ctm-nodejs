@@ -77,7 +77,7 @@ class App {
     const sessionId = request.cookies.user_session || 'dummy_session_id'; // Get session_id from cookie or use a dummy value
 
     const requestData = {
-      email: email,
+      email,
       first_name: 'John',
       last_name: 'Doe',
       session_id: sessionId,
