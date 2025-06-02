@@ -28,7 +28,8 @@
         const userStatus = document.getElementById("status");
         const userInfo   = document.getElementById("user");
 
-        ctmStatus.addEventListener("ctm:agentStatusUpdated", function(event) {
+        // subscribe to events about me. the logged in user.
+        ctmStatus.addEventListener("ctm:me:status", function(event) {
           userStatus.innerHTML = `Status: ${event.detail.status}`;
           userStatus.classList.remove("ready", "not-ready");
           if (event.detail.status == 'online') {
@@ -39,6 +40,9 @@
           if (event.detail?.agent?.email) {
             userInfo.innerHTML = `User: ${event.detail.agent.email}`;
           }
+        });
+        ctmStatus.addEventListener("ctm:user:status", function(event) {
+          console.log("a user status changed: ", event);
         });
       });
     </script>
