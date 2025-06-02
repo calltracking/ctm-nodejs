@@ -23,12 +23,16 @@ class App {
     this.ctm_secret     = process.env.CTM_SECRET;
     this.ctm_account_id = process.env.CTM_ACCOUNT_ID;
 
+    const hasHttpsKey = fs.existsSync('./localhost-key.pem');
+
     this.fastify = Fastify({
       logger: true,
-      https: {
-        key: fs.readFileSync('./localhost-key.pem'),
-        cert: fs.readFileSync('./localhost.pem')
-      }
+      ...(hasHttpsKey && {
+        https: {
+          key: fs.readFileSync('./localhost-key.pem'),
+          cert: fs.readFileSync('./localhost.pem')
+        }
+      })
     });
 
   }
