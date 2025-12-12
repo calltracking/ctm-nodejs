@@ -69,6 +69,11 @@ class App {
     reply.view('agent_status.ejs', { ctm_host: this.ctm_host, email: email });
   }
 
+  // Example: Simplified outbound-only dialer with custom UI
+  dialerOnlyPage(request, reply) {
+    reply.view('dialer_only.ejs', { ctm_host: this.ctm_host });
+  }
+
   // get an access token from CTM to allow your users to authenticate with CTM.
   async ctmAccessRequest(request, reply) {
     const requestUrl = `https://${this.ctm_host}/api/v1/accounts/${this.ctm_account_id}/phone_access`;
@@ -120,6 +125,7 @@ class App {
     this.fastify.get('/agent-status', this.agentStatusPage.bind(this));
     this.fastify.get('/device', this.devicePage.bind(this));
     this.fastify.get('/phone', this.phonePage.bind(this));
+    this.fastify.get('/dialer-only', this.dialerOnlyPage.bind(this));
     this.fastify.get('/login', this.loginPage.bind(this));
 
     this.fastify.post('/login', { preValidation: this.fastify.basicAuth }, this.loginUser.bind(this));
