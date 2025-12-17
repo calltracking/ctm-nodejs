@@ -37,14 +37,14 @@ class App {
 
   }
 
-  loginPage(request, reply) {
-    reply.view('login.ejs');
-  }
-
-  loginUser(request, reply) {
-    const { username, password } = request.body;
-
-    if (password === 'ctm-demo-123') {
+    loginPage(request, reply) {
+      const { redirect_to } = request.query;
+      reply.view('login.ejs', { redirect_to });
+    }
+  
+    loginUser(request, reply) {
+      const { username, redirect_to } = request.body; // Password check removed
+  
       reply
         .setCookie('user_session', 'logged_in', {
           path: '/',
@@ -56,13 +56,8 @@ class App {
           secure: false, // use true in production with HTTPS
           httpOnly: true,
         })
-        .redirect('/');
-    } else {
-      reply.redirect('/login');
+        .redirect(redirect_to || '/');
     }
-  }
-
-
   indexPage(request, reply) {
     reply.view('index.ejs', { ctm_host: this.ctm_host });
   }
@@ -208,7 +203,11 @@ class App {
     });
 
     function shouldBypassAuth(url) {
+      // Strip query parameters for matching
+      const urlPath = url.split('?')[0];
+
       const bypassPatterns = [
+        /^\/$/,                       // Home page (index.ejs)
         /^\/login$/,                 // Login page
         /^\/public\//,               // Static files
         /^\/api\//,                  // API endpoints
@@ -219,7 +218,7 @@ class App {
         /\.map$/,                    // Source maps
       ];
 
-      return bypassPatterns.some((pattern) => pattern.test(url));
+      return bypassPatterns.some((pattern) => pattern.test(urlPath));
     }
 
     // Middleware to check if user is authenticated
@@ -230,7 +229,9 @@ class App {
       console.log(`>>> url: ${url}`);
 
       if (!isLoggedIn && !shouldBypassAuth(url)) {
-        reply.redirect('/login');
+        // If not logged in and not a bypassed URL, redirect to login,
+        // preserving the original requested URL for post-login redirection.
+        reply.redirect(`/login?redirect_to=${encodeURIComponent(url)}`);
       } else {
         done();
       }
@@ -246,6 +247,9 @@ class App {
         port: 8001,
         host: 'localhost',
       });
+      console.log('\n\n'); // Add blank lines for visibility
+      console.log('CTM Demo available at https://localhost:8001');
+      console.log('\n\n'); // Add blank lines for visibility
     } catch (err) {
       this.fastify.log.error(err);
       process.exit(1);

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login Page</title>
+  <title>Fake CRM Login</title>
   <style>
     body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0; }
     form { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 1rem; width: 300px; }
@@ -14,15 +14,19 @@
 </head>
 <body>
   <form method="post" action="/login">
-    <h1>Login</h1>
+    <h1>Fake CRM Login</h1>
     <label for="username">Email:</label>
     <input type="text" id="username" name="username" placeholder="you@example.com" required>
     
     <label for="password">Password:</label>
-    <input type="password" id="password" name="password" required>
-    <div class="hint">Use password: <strong>ctm-demo-123</strong></div>
+    <input type="password" id="password" name="password" value="ctm-demo-123" required>
+    <div class="hint">Password is no longer checked for demo purposes.</div>
     
-    <button type="submit">Login</button>
+    <% if (locals.redirect_to) { %>
+      <input type="hidden" name="redirect_to" value="<%= redirect_to %>">
+    <% } %>
+
+    <button type="submit">Fake CRM Login</button>
   </form>
 </body>
 </html>
