@@ -213,9 +213,6 @@
     <div class="header">
       <h1>Acme Corp. CRM</h1>
       <h2>Customer Profile View</h2>
-      <div style="background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 14px; border: 1px solid #ffeeba;">
-        <strong>Note:</strong> Please allow popups for this site to ensure the phone device window can open correctly.
-      </div>
     </div>
 
     <div class="card">
@@ -254,7 +251,15 @@
 
   <!-- Phone Section (Custom Dialer) -->
   <div class="phone-panel">
-    <div class="dialer" id="dialer">
+    <!-- Launch Screen -->
+    <div id="launch-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; text-align: center; padding: 20px; box-sizing: border-box;">
+      <div style="font-size: 48px; margin-bottom: 20px;">📞</div>
+      <h3 style="color: #333; margin: 0 0 10px 0;">Phone System</h3>
+      <p style="color: #666; margin: 0 0 20px 0; max-width: 200px; line-height: 1.4;">Launch the phone device to start making calls.</p>
+      <button id="launch-btn" style="background: #4285f4; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">Launch Phone</button>
+    </div>
+
+    <div class="dialer" id="dialer" style="display: none;">
       <div class="dialer-header">
         <span class="dialer-title">Outbound Call</span>
       </div>
@@ -295,12 +300,17 @@
         this.isOnCall = false;
         this.isReady = false;
         this.currentActivity = null;
+        this.token = null;
 
         // DOM elements
         this.phoneInput = document.getElementById('phoneNumber');
         this.callBtn = document.getElementById('callBtn');
         this.statusDot = document.getElementById('statusDot');
         this.statusText = document.getElementById('statusText');
+        
+        this.launchScreen = document.getElementById('launch-screen');
+        this.dialer = document.getElementById('dialer');
+        this.launchBtn = document.getElementById('launch-btn');
         
         // CTM phone embed element
         this.phone = document.querySelector('ctm-phone-embed');
@@ -313,9 +323,33 @@
         this.setupCallButton();
         this.setupCRMClickToCall();
         this.setupCTMEvents();
+        this.setupLaunch();
 
-        // Fetch access token and assign it to initialize the phone
-        this.phone.accessToken = await this.phone.fetchUserAccess();
+        // Pre-fetch access token so we can launch synchronously on click
+        try {
+          this.token = await this.phone.fetchUserAccess();
+          console.log('Token pre-fetched successfully');
+        } catch (err) {
+          console.error('Error pre-fetching token:', err);
+          // Retry logic or error display could go here
+        }
+      }
+
+      setupLaunch() {
+        this.launchBtn.addEventListener('click', () => {
+          if (this.token) {
+            // Apply token synchronously to avoid popup blockers
+            this.phone.accessToken = this.token;
+            
+            // Switch UI
+            this.launchScreen.style.display = 'none';
+            this.dialer.style.display = 'flex'; // Restore flex display for dialer
+          } else {
+            alert('Still connecting to authentication service... please try again in a moment.');
+            // Try fetching again if it failed?
+             this.phone.fetchUserAccess().then(t => { this.token = t; });
+          }
+        });
       }
 
       setupCTMEvents() {
