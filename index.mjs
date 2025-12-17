@@ -42,11 +42,24 @@ class App {
   }
 
   loginUser(request, reply) {
-    reply.setCookie('user_session', 'logged_in', {
-      path: '/',
-      secure: false, // use true in production with HTTPS
-      httpOnly: true,
-    }).redirect('/');
+    const { username, password } = request.body;
+
+    if (password === 'ctm-demo-123') {
+      reply
+        .setCookie('user_session', 'logged_in', {
+          path: '/',
+          secure: false, // use true in production with HTTPS
+          httpOnly: true,
+        })
+        .setCookie('user_email', username, {
+          path: '/',
+          secure: false, // use true in production with HTTPS
+          httpOnly: true,
+        })
+        .redirect('/');
+    } else {
+      reply.redirect('/login');
+    }
   }
 
 
@@ -65,7 +78,7 @@ class App {
   }
 
   agentStatusPage(request, reply) {
-    const email = 'demo@calltrackingmetrics.com'; // or get from session
+    const email = request.cookies.user_email || 'demo@calltrackingmetrics.com'; // or get from session
     reply.view('agent_status.ejs', { ctm_host: this.ctm_host, email: email });
   }
 
@@ -78,13 +91,17 @@ class App {
   async ctmAccessRequest(request, reply) {
     const requestUrl = `https://${this.ctm_host}/api/v1/accounts/${this.ctm_account_id}/phone_access`;
 
-    const email = 'demo@calltrackingmetrics.com';
+    const email = request.cookies.user_email || 'demo@calltrackingmetrics.com';
     const sessionId = request.cookies.user_session || 'dummy_session_id'; // Get session_id from cookie or use a dummy value
+
+    const nameParts = email.split('@')[0].split('.');
+    const firstName = nameParts[0] || 'John';
+    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : 'Doe';
 
     const requestData = {
       email,
-      first_name: 'John',
-      last_name: 'Doe',
+      first_name: firstName,
+      last_name: lastName,
       session_id: sessionId,
     };
 
@@ -128,7 +145,7 @@ class App {
     this.fastify.get('/dialer-only', this.dialerOnlyPage.bind(this));
     this.fastify.get('/login', this.loginPage.bind(this));
 
-    this.fastify.post('/login', { preValidation: this.fastify.basicAuth }, this.loginUser.bind(this));
+    this.fastify.post('/login', this.loginUser.bind(this));
 
 
     // API endpoint

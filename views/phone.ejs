@@ -1,12 +1,467 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Home Page</title>
+  <title>Acme CRM</title>
   <script src="https://<%= ctm_host %>/ctm-phone-embed-1.0.js"></script>
+  <script src="https://<%= ctm_host %>/ctm-phone-device-1.0.js"></script>
+  <style>
+    /* Global Styles */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      background-color: #f4f6f8;
+      overflow: hidden;
+    }
+
+    /* Left Side: CRM */
+    .crm-panel {
+      flex: 1;
+      padding: 40px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .header { margin-bottom: 20px; }
+    .header h1 { margin: 0; color: #2c3e50; font-size: 24px; }
+    .header h2 { margin: 5px 0 0; color: #7f8c8d; font-weight: normal; font-size: 16px; }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      padding: 24px;
+      border: 1px solid #e1e4e8;
+    }
+
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 18px;
+      color: #34495e;
+      border-bottom: 2px solid #f0f2f5;
+      padding-bottom: 8px;
+    }
+
+    .field-group { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #7f8c8d; margin-bottom: 4px; font-weight: 600; }
+    .field .value { font-size: 16px; color: #2c3e50; }
+
+    .call-link { color: #3498db; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; cursor: pointer; }
+    .call-link:hover { text-decoration: underline; }
+    .call-link::before { content: "📞"; margin-right: 6px; }
+
+    .notes-content { line-height: 1.6; color: #555; }
+    .notes-content p { margin-top: 0; }
+
+    /* Right Side: Phone Panel (Dialer Styles) */
+    .phone-panel {
+      width: 360px; /* Adjusted width for the custom dialer */
+      background: #ffffff;
+      border-left: 1px solid #d1d5da;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.05);
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px;
+      background-color: #f8f9fa; /* Match the dialer aesthetic */
+    }
+
+    /* Dialer Component Styles */
+    :root {
+      --dialer-primary: #4285f4;
+      --dialer-primary-hover: #3367d6;
+      --dialer-header-bg: #4285f4;
+      --dialer-header-text: #fff;
+      --dialer-bg: #fff;
+      --dialer-text: #333;
+      --dialer-border: #e0e0e0;
+      --dialer-button-bg: #f5f5f5;
+      --dialer-button-hover: #e8e8e8;
+      --dialer-button-text: #333;
+      --dialer-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      --dialer-radius: 8px;
+    }
+
+    /* Hide the CTM embed component - we only use it for API access */
+    ctm-device-embed,
+    ctm-phone-embed {
+      position: absolute !important;
+      left: -9999px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    .dialer {
+      width: 320px;
+      background: var(--dialer-bg);
+      border-radius: var(--dialer-radius);
+      box-shadow: var(--dialer-shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dialer-header {
+      background: var(--dialer-header-bg);
+      color: var(--dialer-header-text);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .dialer-title { font-size: 18px; font-weight: 500; }
+
+    .dialer-body { padding: 24px 20px; }
+
+    .phone-input-container { margin-bottom: 20px; }
+    .phone-input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 20px;
+      text-align: center;
+      border: 1px solid var(--dialer-border);
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .phone-input:focus { border-color: var(--dialer-primary); }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .keypad-btn {
+      background: var(--dialer-button-bg);
+      border: none;
+      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--dialer-button-text);
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    .keypad-btn:hover { background: var(--dialer-button-hover); }
+    .keypad-btn:active { transform: scale(0.95); }
+    .keypad-sub { font-size: 10px; color: #888; display: block; margin-top: 2px; }
+
+    .call-btn {
+      width: 100%;
+      padding: 14px 24px;
+      background: var(--dialer-primary);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .call-btn:hover { background: var(--dialer-primary-hover); }
+    .call-btn:disabled { background: #ccc; cursor: not-allowed; }
+    .call-btn.hangup { background: #dc3545; }
+    .call-btn.hangup:hover { background: #c82333; }
+
+    .status-bar {
+      padding: 12px 20px;
+      background: #f8f9fa;
+      border-top: 1px solid var(--dialer-border);
+      font-size: 13px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #6c757d; }
+    .status-dot.online { background: #28a745; }
+    .status-dot.busy { background: #ffc107; }
+    .status-dot.calling { background: #17a2b8; animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
 </head>
 <body>
-  <h1>Your Application</h1>
-  <p>Embedding the CTM Phone</p>
+
+  <!-- Hidden CTM embed - provides API access and authentication -->
   <ctm-phone-embed access="/api/ctm_access" popout="/device"></ctm-phone-embed>
+
+  <!-- CRM Section -->
+  <div class="crm-panel">
+    <div class="header">
+      <h1>Acme Corp. CRM</h1>
+      <h2>Customer Profile View</h2>
+    </div>
+
+    <div class="card">
+      <h3>Contact Information</h3>
+      <div class="field-group">
+        <div class="field">
+          <label>Company</label>
+          <div class="value">Acme.com</div>
+        </div>
+        <div class="field">
+          <label>Contact Name</label>
+          <div class="value">John Smith</div>
+        </div>
+        <div class="field">
+          <label>Email Address</label>
+          <div class="value"><a href="mailto:john.smith@example.com" style="color: inherit;">john.smith@example.com</a></div>
+        </div>
+        <div class="field">
+          <label>Phone Number</label>
+          <div class="value">
+            <a class="call-link" data-number="+15551234567">+1 (555) 123-4567</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Account Notes</h3>
+      <div class="notes-content">
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        <p><strong>Recent Activity:</strong> Client expressed interest in upgrading their tier next quarter. Follow up required by EOM.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone Section (Custom Dialer) -->
+  <div class="phone-panel">
+    <div class="dialer" id="dialer">
+      <div class="dialer-header">
+        <span class="dialer-title">Outbound Call</span>
+      </div>
+
+      <div class="dialer-body">
+        <div class="phone-input-container">
+          <input type="tel" class="phone-input" id="phoneNumber" placeholder="Enter phone number" autocomplete="off">
+        </div>
+
+        <div class="keypad">
+          <button class="keypad-btn" data-digit="1">1</button>
+          <button class="keypad-btn" data-digit="2">2<span class="keypad-sub">ABC</span></button>
+          <button class="keypad-btn" data-digit="3">3<span class="keypad-sub">DEF</span></button>
+          <button class="keypad-btn" data-digit="4">4<span class="keypad-sub">GHI</span></button>
+          <button class="keypad-btn" data-digit="5">5<span class="keypad-sub">JKL</span></button>
+          <button class="keypad-btn" data-digit="6">6<span class="keypad-sub">MNO</span></button>
+          <button class="keypad-btn" data-digit="7">7<span class="keypad-sub">PQRS</span></button>
+          <button class="keypad-btn" data-digit="8">8<span class="keypad-sub">TUV</span></button>
+          <button class="keypad-btn" data-digit="9">9<span class="keypad-sub">WXYZ</span></button>
+          <button class="keypad-btn" data-digit="*">*</button>
+          <button class="keypad-btn" data-digit="0">0</button>
+          <button class="keypad-btn" data-digit="#">#</button>
+        </div>
+
+        <button class="call-btn" id="callBtn">Call Now</button>
+      </div>
+
+      <div class="status-bar">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class DialerController {
+      constructor() {
+        this.isOnCall = false;
+        this.isReady = false;
+        this.currentActivity = null;
+
+        // DOM elements
+        this.phoneInput = document.getElementById('phoneNumber');
+        this.callBtn = document.getElementById('callBtn');
+        this.statusDot = document.getElementById('statusDot');
+        this.statusText = document.getElementById('statusText');
+        
+        // CTM phone embed element
+        this.phone = document.querySelector('ctm-phone-embed');
+
+        this.init();
+      }
+
+      async init() {
+        this.setupKeypad();
+        this.setupCallButton();
+        this.setupCRMClickToCall();
+        this.setupCTMEvents();
+
+        // Fetch access token and assign it to initialize the phone
+        this.phone.accessToken = await this.phone.fetchUserAccess();
+      }
+
+      setupCTMEvents() {
+        this.phone.addEventListener('ctm:ready', (event) => {
+          console.log('CTM Phone ready:', event.detail);
+          this.isReady = true;
+          this.phone.setStatus('online');
+          this.updateStatus('online');
+        });
+
+        this.phone.addEventListener('ctm:live-activity', (event) => {
+          console.log('Live activity:', event.detail);
+          this.currentActivity = event.detail;
+          this.handleCallStart();
+        });
+
+        this.phone.addEventListener('ctm:end-activity', (event) => {
+          console.log('Activity ended:', event.detail);
+          this.currentActivity = null;
+          this.handleCallEnd();
+        });
+
+        this.phone.addEventListener('ctm:wrapup-start', (event) => {
+          this.updateStatus('wrapup');
+        });
+
+        this.phone.addEventListener('ctm:wrapup-end', (event) => {
+          this.handleCallEnd();
+        });
+
+        this.phone.addEventListener('ctm:status-change', (event) => {
+          if (event.detail?.status) {
+            this.updateStatus(event.detail.status);
+          }
+        });
+      }
+
+      setupKeypad() {
+        document.querySelectorAll('.keypad-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const digit = btn.dataset.digit;
+            this.phoneInput.value += digit;
+            this.phoneInput.focus();
+            
+            // Send DTMF if on call
+            if (this.isOnCall) {
+              // this.phone.sendDtmf(digit); // Example if API supported
+            }
+          });
+        });
+
+        this.phoneInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && this.phoneInput.value.length >= 3) {
+            this.makeCall();
+          }
+        });
+      }
+
+      setupCallButton() {
+        this.callBtn.addEventListener('click', () => {
+          if (this.isOnCall) {
+            this.hangUp();
+          } else {
+            this.makeCall();
+          }
+        });
+      }
+
+      setupCRMClickToCall() {
+        // Handle CRM click-to-call links
+        document.querySelectorAll('.call-link').forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const number = e.currentTarget.dataset.number;
+            this.phoneInput.value = number;
+            this.makeCall();
+          });
+        });
+      }
+
+      makeCall() {
+        let phoneNumber = this.phoneInput.value.replace(/\D/g, '');
+
+        if (phoneNumber.length < 3) {
+          alert('Please enter a valid phone number');
+          return;
+        }
+        
+        // Simple US format check
+        if (phoneNumber.length === 10) {
+          phoneNumber = '+1' + phoneNumber;
+        } else if (phoneNumber.length > 10 && !phoneNumber.startsWith('+')) {
+           phoneNumber = '+' + phoneNumber;
+        }
+
+        console.log('Calling:', phoneNumber);
+        this.updateStatus('calling');
+        this.phone.call(phoneNumber);
+      }
+
+      hangUp() {
+        if (!this.isOnCall) return;
+        this.phone.hangup();
+      }
+
+      handleCallStart() {
+        this.isOnCall = true;
+        this.updateStatus('busy');
+        this.callBtn.textContent = 'Hang Up';
+        this.callBtn.classList.add('hangup');
+      }
+
+      handleCallEnd() {
+        this.isOnCall = false;
+        this.updateStatus('online');
+        this.callBtn.textContent = 'Call Now';
+        this.callBtn.classList.remove('hangup');
+        this.phoneInput.value = ''; // Optional: clear input after call
+      }
+
+      updateStatus(status) {
+        this.statusDot.className = 'status-dot';
+        switch (status) {
+          case 'online':
+            this.statusDot.classList.add('online');
+            this.statusText.textContent = 'Ready';
+            break;
+          case 'busy':
+          case 'on-call':
+            this.statusDot.classList.add('busy');
+            this.statusText.textContent = 'On Call';
+            break;
+          case 'calling':
+            this.statusDot.classList.add('calling');
+            this.statusText.textContent = 'Calling...';
+            break;
+          case 'wrapup':
+            this.statusDot.classList.add('busy');
+            this.statusText.textContent = 'Wrap Up';
+            break;
+          default:
+            this.statusText.textContent = 'Connecting...';
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      window.dialer = new DialerController();
+    });
+  </script>
 </body>
 </html>
