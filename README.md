@@ -2,6 +2,8 @@
 
 Example Node.js Application to connect to CallTrackingMetrics embeddable softphone into your application.
 
+For setup and embedding instructions, see the [CTM Phone Embed User Guide](./USER_GUIDE.md).
+
   * You can either use our component's UI or build your own
   * Authentication is handled automatically via backend connection
 
