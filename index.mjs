@@ -1,6 +1,8 @@
 import process from 'process';
 import path from 'path';
 import fs from 'fs';
+import https from 'https';
+import tls from 'tls';
 import { fileURLToPath } from 'url';
 import ejs from 'ejs';
 import fetch from 'node-fetch';
@@ -16,12 +18,33 @@ import fastifyFormbody from '@fastify/formbody';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/**
+ * Build an HTTPS agent that trusts Node's configured certificates and the operating system store.
+ * This keeps TLS verification enabled while supporting local development certificates installed
+ * by tools such as mkcert.
+ *
+ * @returns {https.Agent|undefined} an agent with the combined trust store when supported
+ */
+function createCtmHttpsAgent() {
+  if (typeof tls.getCACertificates !== 'function') {
+    return undefined;
+  }
+
+  const certificates = [
+    ...tls.getCACertificates('default'),
+    ...tls.getCACertificates('system'),
+  ];
+
+  return new https.Agent({ ca: [...new Set(certificates)] });
+}
+
 class App {
   constructor() {
     this.ctm_host       = process.env.CTM_HOST;
     this.ctm_token      = process.env.CTM_TOKEN;
     this.ctm_secret     = process.env.CTM_SECRET;
     this.ctm_account_id = process.env.CTM_ACCOUNT_ID;
+    this.ctmHttpsAgent = createCtmHttpsAgent();
 
     const hasHttpsKey = fs.existsSync('./localhost-key.pem');
 
@@ -106,6 +129,7 @@ class App {
 
     const response = await fetch(requestUrl, {
       method: 'POST',
+      agent: this.ctmHttpsAgent,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${base64Credentials}`

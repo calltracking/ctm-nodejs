@@ -36,6 +36,10 @@ mkcert localhost
 
 Place the generated `localhost.pem` and `localhost-key.pem` files in the project root. The server will automatically enable HTTPS when they are present.
 
+The demo's outbound CTM requests combine Node's configured certificate authorities with the operating
+system trust store. This allows certificates installed by `mkcert` to be trusted without disabling TLS
+verification. Use a current Node release that supports the system CA store.
+
 ## 5. Start the demo
 Launch the Fastify server:
 
